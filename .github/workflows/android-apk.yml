@@ -4,7 +4,7 @@ on:
     branches: [main]
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   build-apk:
     runs-on: ubuntu-latest
@@ -34,10 +34,25 @@ jobs:
       - name: Build debug APK
         working-directory: android
         run: chmod +x gradlew && ./gradlew assembleDebug
+      - name: Prepare public APK asset
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk SAI-Bank-App.apk
       - name: Upload installable APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: SAI-Bank-App-debug-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: SAI-Bank-App.apk
           if-no-files-found: error
           retention-days: 14
+      - name: Publish public GitHub Release download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: SAI Bank App — Latest Android APK
+          body: |
+            Public Android APK build for SAI Bank App.
+            Download SAI-Bank-App.apk and install it on an Android device.
+            This is a debug build for testing, not a production banking application.
+          prerelease: true
+          make_latest: false
+          files: SAI-Bank-App.apk
+          overwrite_files: true
