@@ -25,8 +25,8 @@ jobs:
       - name: Build web app
         run: npm run build
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://jgubunffqfyapurxpoih.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpndWJ1bmZmcWZ5YXB1cnhwb2loIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2NDc1OTcsImV4cCI6MjEwNTIyMzU5N30.2NSWUHJ4zmessRXknl-Gez9UxwfV-K0riIPZxT58Tf4' }}
       - name: Generate Android project
         run: npx cap add android
       - name: Sync web app into Android
