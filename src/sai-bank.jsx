@@ -84,21 +84,24 @@ function AppDashboard({ session }) {
       const { data: txs, error: txErr } = await supabase.from('bank_transactions').select('transaction_id,from_account_id,to_account_id,amount,currency,transaction_type,status,reference,created_at,completed_at').or('from_account_id.not.is.null,to_account_id.not.is.null').order('created_at', { ascending: false }).limit(100);
       if (txErr) throw txErr;
       setTransactions((txs || []).filter(t => [accounts?.[0]?.account_id].includes(t.from_account_id) || [accounts?.[0]?.account_id].includes(t.to_account_id)));
-      const { data: others, error: othersErr } = await supabase.from('bank_accounts').select('account_id,account_number,user_id,status,currency').neq('user_id', user.id).eq('status','active').limit(100);
-      if (othersErr) throw othersErr;
-      const otherUserIds = [...new Set((others || []).map(p => p.user_id).filter(Boolean))];
-      let profileNames = new Map();
-      if (otherUserIds.length) {
-        const { data: profiles, error: profilesErr } = await supabase.from('banking_profiles').select('user_id,full_name').in('user_id', otherUserIds);
-        if (profilesErr) throw profilesErr;
-        profileNames = new Map((profiles || []).map(p => [p.user_id, p.full_name]));
-      }
-      setPeople((others || []).map(p => ({ ...p, full_name: profileNames.get(p.user_id) || 'SAI Bank user' })));
+      setPeople([]);
     } catch (e) { setError(e.message || 'Unable to load account data. Check the database schema and RLS policies.'); }
     finally { setLoading(false); }
   }
 
   useEffect(() => { loadAll(); }, [user.id]);
+  useEffect(() => {
+    let cancelled = false;
+    const term = recipient.trim();
+    if (!recipientFocused || !term) { setPeople([]); return; }
+    const timer = setTimeout(async () => {
+      const { data, error: searchError } = await supabase.rpc('search_bank_recipients', { p_query: term });
+      if (cancelled) return;
+      if (searchError) { setPeople([]); setError(searchError.message || 'Could not search recipient accounts.'); return; }
+      setPeople(data || []);
+    }, 180);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [recipient, recipientFocused, user.id]);
   useEffect(() => {
     const channel = supabase.channel('sai-bank-live-' + user.id)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bank_accounts', filter: 'user_id=eq.' + user.id }, () => loadAll())
