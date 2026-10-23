@@ -1,0 +1,8 @@
+{
+  "appId": "com.pallasivasai.saibank",
+  "appName": "SAI Bank App",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
